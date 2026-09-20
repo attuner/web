@@ -1,0 +1,23 @@
+{
+"name": "WebDesk Ultra OS v3.0",
+"short_name": "WebDeskOS",
+"start_url": "./index.html",
+"display": "standalone",
+"background_color": "#090d16",
+"theme_color": "#090d16",
+"description": "Full-featured Cloud Web Desktop OS with PWA App Store & Google Sync",
+"icons": [
+{
+"src": "https://placehold.co/192x192/2563eb/ffffff?text=OS",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any maskable"
+},
+{
+"src": "https://placehold.co/512x512/2563eb/ffffff?text=WebDesk",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any maskable"
+}
+]
+}
