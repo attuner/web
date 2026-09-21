@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>WebDesk Ultra OS v5.0 (Touch & Mobile Enhanced)</title>
+  <title>WebDesk Ultra OS v5.0</title>
 
   <!-- PWA Manifest & Meta Tags -->
   <link rel="manifest" href='data:application/manifest+json,{"name":"WebDesk Ultra OS","short_name":"WebDesk","start_url":".","display":"standalone","background_color":"#0b0f19","theme_color":"#0f172a","icons":[{"src":"https://placehold.co/192x192/0ea5e9/ffffff?text=WD5","sizes":"192x192","type":"image/png"}]}' />
@@ -95,7 +95,7 @@
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
     }
 
-    /* 8-Directional Edge Resizers with Touch-Friendly Grips (20px-24px touch targets) */
+    /* 8-Directional Edge Resizers with Touch-Friendly Grips */
     .resizer { position: absolute; z-index: 50; touch-action: none; }
     .resizer-n { top: -8px; left: 15px; right: 15px; height: 18px; cursor: n-resize; }
     .resizer-s { bottom: -8px; left: 15px; right: 15px; height: 18px; cursor: s-resize; }
@@ -116,7 +116,6 @@
       -webkit-user-select: auto;
     }
 
-    /* Responsive grid styles */
     #desktop-grid {
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
@@ -151,9 +150,9 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed top-4 right-4 z-[99999] flex flex-col gap-2 max-w-sm pointer-events-none"></div>
 
-  <!-- MAIN DESKTOP WORKSPACE (Responsive Flex & Scroll) -->
-  <div id="desktop-workspace" class="relative flex-1 w-full overflow-hidden flex flex-col md:flex-row p-3 md:p-5 gap-4 pointer-events-none z-10" onclick="WebDesk.closePopups()">
-    <!-- DESKTOP APP ICONS GRID (Mobile-friendly multi-column adaptive layout) -->
+  <!-- MAIN DESKTOP WORKSPACE (pointer-events-auto applied) -->
+  <div id="desktop-workspace" class="relative flex-1 w-full overflow-hidden flex flex-col md:flex-row p-3 md:p-5 gap-4 pointer-events-auto z-10" onclick="WebDesk.closePopups()">
+    <!-- DESKTOP APP ICONS GRID -->
     <main id="desktop-grid" class="relative grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3 w-full md:w-max h-full overflow-y-auto pr-1 md:pr-3 pointer-events-auto select-none">
       <!-- Dynamically Populated -->
     </main>
@@ -243,7 +242,7 @@
 
   <script>
     /* =========================================================================
-       WEBDESK ULTRA OS v5.0 — MULTI-PLATFORM TOUCH RUNTIME
+       WEBDESK ULTRA OS v5.0 — MULTI-PLATFORM RUNTIME
        ========================================================================= */
 
     const WebDesk = {
@@ -297,9 +296,7 @@
             osc.start(now);
             osc.stop(now + 0.36);
           }
-        } catch (e) {
-          // Audio unlocked on first tap
-        }
+        } catch (e) {}
       },
 
       notify(title, msg, type = 'chime') {
@@ -333,7 +330,8 @@
         const saved = localStorage.getItem('webdesk_pwd_hash') || this.state.masterHash;
 
         if (hash === saved || input === 'admin123') {
-          document.getElementById('lock-screen').classList.add('opacity-0', 'pointer-events-none');
+          const lock = document.getElementById('lock-screen');
+          lock.style.display = 'none'; // Unblocks hit testing entirely
           this.state.unlocked = true;
           this.playChime('chime');
           this.notify('Workstation Active', 'Session unlocked and verified.');
@@ -347,7 +345,8 @@
 
       lockOS() {
         this.state.unlocked = false;
-        document.getElementById('lock-screen').classList.remove('opacity-0', 'pointer-events-none');
+        const lock = document.getElementById('lock-screen');
+        lock.style.display = 'flex';
         document.getElementById('lock-pass-input').value = '';
         this.closePopups();
       },
@@ -420,22 +419,18 @@
 
         this.state.apps.forEach(app => {
           const item = document.createElement('div');
-          item.className = 'flex flex-col items-center justify-center p-2 rounded-2xl w-full aspect-square hover:bg-white/15 active:scale-90 transition cursor-pointer text-center group pointer-events-auto select-none touch-manipulation';
+          item.className = 'flex flex-col items-center justify-center p-2 rounded-2xl w-full aspect-square hover:bg-white/15 active:scale-90 transition cursor-pointer text-center group select-none touch-manipulation';
           
-          // Enhanced dual handler for absolute touch/pointer reliability
-          const handleOpen = (e) => {
-            e.preventDefault();
+          item.onclick = (e) => {
             e.stopPropagation();
             this.openApp(app.id);
           };
-          item.addEventListener('pointerup', handleOpen);
-          item.addEventListener('touchend', handleOpen);
 
           item.innerHTML = `
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500/20 to-purple-600/20 glass flex items-center justify-center text-xl shadow group-hover:scale-105 transition-transform border border-white/10">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500/20 to-purple-600/20 glass flex items-center justify-center text-xl shadow group-hover:scale-105 transition-transform border border-white/10 pointer-events-none">
               ${app.icon}
             </div>
-            <span class="mt-1 text-[11px] text-slate-200 font-medium truncate w-full group-hover:text-white drop-shadow">${app.name}</span>
+            <span class="mt-1 text-[11px] text-slate-200 font-medium truncate w-full group-hover:text-white drop-shadow pointer-events-none">${app.name}</span>
           `;
           grid.appendChild(item);
         });
@@ -452,15 +447,13 @@
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between p-2.5 rounded-xl hover:bg-white/10 active:bg-white/20 cursor-pointer transition touch-manipulation';
             
-            const handleLaunch = () => {
+            row.onclick = () => {
               this.openApp(app.id);
               this.closePopups();
             };
-            row.addEventListener('pointerup', handleLaunch);
-            row.addEventListener('touchend', (e) => { e.preventDefault(); handleLaunch(); });
 
             row.innerHTML = `
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2.5 pointer-events-none">
                 <span class="text-lg">${app.icon}</span>
                 <div>
                   <div class="font-semibold text-xs text-white">${app.name}</div>
@@ -516,7 +509,6 @@
         const app = this.state.apps.find(a => a.id === appId);
         if (!app) return;
 
-        // Mobile, Tablet and iPad viewport logic
         const isMobileOrTablet = window.innerWidth < 850;
         const initialW = isMobileOrTablet ? window.innerWidth : Math.min(window.innerWidth - 30, app.width || 620);
         const initialH = isMobileOrTablet ? window.innerHeight - 56 : Math.min(window.innerHeight - 70, app.height || 480);
@@ -553,7 +545,6 @@
         winEl.style.zIndex = win.zIndex;
         winEl.onpointerdown = () => this.bringToFront(app.id);
 
-        // Header Titlebar with Functional Back Button (◀ Back)
         const header = document.createElement('div');
         header.className = 'h-11 bg-slate-950/90 border-b border-white/10 flex items-center justify-between px-3 select-none shrink-0 touch-none';
         header.innerHTML = `
@@ -571,12 +562,10 @@
           </div>
         `;
 
-        // Body Canvas
         const body = document.createElement('div');
         body.className = 'flex-1 overflow-hidden relative bg-slate-950/80 text-slate-100 flex flex-col';
         body.id = `body-${app.id}`;
 
-        // 8-way Edge Resizer handles
         ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].forEach(dir => {
           const r = document.createElement('div');
           r.className = `resizer resizer-${dir}`;
@@ -622,7 +611,7 @@
           if (e.target.closest('button')) return;
           this.bringToFront(appId);
           if (this.state.windows[appId] && this.state.windows[appId].maximized && window.innerWidth < 850) {
-            return; // Lock dragging when in full-screen phone mode
+            return;
           }
           isDragging = true;
           startX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -673,7 +662,6 @@
         header.addEventListener('pointerup', onPointerUp);
         header.addEventListener('pointercancel', onPointerUp);
 
-        // Fallbacks for older touch engines
         header.addEventListener('touchstart', onPointerDown, { passive: false });
         header.addEventListener('touchmove', onPointerMove, { passive: false });
         header.addEventListener('touchend', onPointerUp, { passive: false });
@@ -1771,9 +1759,7 @@
               body: JSON.stringify(payload)
             });
             this.notify('Cloud Synchronized', 'Records synced with Google Sheets.');
-          } catch(e) {
-            console.warn('Sync fallback', e);
-          }
+          } catch(e) {}
         }
 
         setTimeout(() => {
@@ -1814,7 +1800,6 @@
           this.closePopups();
         });
 
-        // Touch event to unlock Web Audio on mobile/tablet without restrictions
         window.addEventListener('touchstart', () => {
           this.getAudioContext();
         }, { once: true });
