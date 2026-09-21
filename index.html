@@ -71,6 +71,12 @@
       box-sizing: border-box;
     }
 
+    html, body {
+      height: 100%;
+      height: -webkit-fill-available;
+      height: 100dvh;
+    }
+
     body {
       background: var(--wallpaper);
       background-size: cover;
@@ -81,7 +87,6 @@
       position: fixed;
       inset: 0;
       width: 100vw;
-      height: 100vh;
     }
 
     .glass {
@@ -97,14 +102,14 @@
 
     /* 8-Directional Edge Resizers with Touch-Friendly Grips */
     .resizer { position: absolute; z-index: 50; touch-action: none; }
-    .resizer-n { top: -8px; left: 15px; right: 15px; height: 18px; cursor: n-resize; }
-    .resizer-s { bottom: -8px; left: 15px; right: 15px; height: 18px; cursor: s-resize; }
-    .resizer-e { top: 15px; bottom: 15px; right: -8px; width: 18px; cursor: e-resize; }
-    .resizer-w { top: 15px; bottom: 15px; left: -8px; width: 18px; cursor: w-resize; }
-    .resizer-ne { top: -10px; right: -10px; width: 26px; height: 26px; cursor: ne-resize; }
-    .resizer-nw { top: -10px; left: -10px; width: 26px; height: 26px; cursor: nw-resize; }
-    .resizer-se { bottom: -10px; right: -10px; width: 26px; height: 26px; cursor: se-resize; }
-    .resizer-sw { bottom: -10px; left: -10px; width: 26px; height: 26px; cursor: sw-resize; }
+    .resizer-n { top: -10px; left: 15px; right: 15px; height: 22px; cursor: n-resize; }
+    .resizer-s { bottom: -10px; left: 15px; right: 15px; height: 22px; cursor: s-resize; }
+    .resizer-e { top: 15px; bottom: 15px; right: -10px; width: 22px; cursor: e-resize; }
+    .resizer-w { top: 15px; bottom: 15px; left: -10px; width: 22px; cursor: w-resize; }
+    .resizer-ne { top: -12px; right: -12px; width: 30px; height: 30px; cursor: ne-resize; }
+    .resizer-nw { top: -12px; left: -12px; width: 30px; height: 30px; cursor: nw-resize; }
+    .resizer-se { bottom: -12px; right: -12px; width: 30px; height: 30px; cursor: se-resize; }
+    .resizer-sw { bottom: -12px; left: -12px; width: 30px; height: 30px; cursor: sw-resize; }
 
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -119,6 +124,11 @@
     #desktop-grid {
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .dragging-icon {
+      opacity: 0.5;
+      transform: scale(0.92);
     }
   </style>
 </head>
@@ -150,15 +160,15 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed top-4 right-4 z-[99999] flex flex-col gap-2 max-w-sm pointer-events-none"></div>
 
-  <!-- MAIN DESKTOP WORKSPACE (pointer-events-auto applied) -->
+  <!-- MAIN DESKTOP WORKSPACE -->
   <div id="desktop-workspace" class="relative flex-1 w-full overflow-hidden flex flex-col md:flex-row p-3 md:p-5 gap-4 pointer-events-auto z-10" onclick="WebDesk.closePopups()">
-    <!-- DESKTOP APP ICONS GRID -->
-    <main id="desktop-grid" class="relative grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3 w-full md:w-max h-full overflow-y-auto pr-1 md:pr-3 pointer-events-auto select-none">
-      <!-- Dynamically Populated -->
+    <!-- DESKTOP APP ICONS GRID (Rearrangeable Shortcuts) -->
+    <main id="desktop-grid" class="relative grid grid-cols-4 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-7 gap-2.5 sm:gap-3 w-full md:w-max h-full overflow-y-auto pr-1 md:pr-3 pointer-events-auto select-none">
+      <!-- Dynamically Populated with drag-reorder -->
     </main>
 
     <!-- DRAGGABLE / REARRANGEABLE DESKTOP WIDGETS -->
-    <aside id="desktop-widgets" class="hidden md:flex relative flex-1 flex-wrap content-start gap-3.5 p-1 overflow-y-auto max-w-full pointer-events-auto">
+    <aside id="desktop-widgets" class="hidden lg:flex relative flex-1 flex-wrap content-start gap-3.5 p-1 overflow-y-auto max-w-full pointer-events-auto">
       <!-- Dynamically Populated -->
     </aside>
   </div>
@@ -176,16 +186,22 @@
         ❖
       </button>
 
-      <!-- App Store / Uploader Trigger -->
-      <button onclick="WebDesk.openApp('uploader')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition active:scale-95 touch-manipulation">
+      <!-- Web Browser Fast Access -->
+      <button onclick="WebDesk.openApp('browser')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 text-xs font-semibold transition active:scale-95 touch-manipulation" title="WebSurfer Pro Browser">
+        <span>🌐</span>
+        <span class="hidden sm:inline">Browser</span>
+      </button>
+
+      <!-- URL PWA Installer Trigger -->
+      <button onclick="WebDesk.openApp('pwainstall')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition active:scale-95 touch-manipulation">
         <span>+</span>
-        <span class="hidden sm:inline">Install / Upload App</span>
+        <span class="hidden sm:inline">Install PWA</span>
       </button>
 
       <div class="h-6 w-px bg-white/10 mx-1"></div>
 
       <!-- Dock Window Tabs -->
-      <div id="taskbar-tabs" class="flex items-center gap-1.5 overflow-x-auto max-w-[35vw] sm:max-w-[55vw]"></div>
+      <div id="taskbar-tabs" class="flex items-center gap-1.5 overflow-x-auto max-w-[35vw] sm:max-w-[48vw]"></div>
     </div>
 
     <!-- Right System Tray -->
@@ -219,24 +235,27 @@
           <div class="text-[10px] text-slate-400">Single-User Cloud Workstation</div>
         </div>
       </div>
-      <span id="start-count" class="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-full">30 Apps</span>
+      <span id="start-count" class="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-full">Apps</span>
     </div>
     <input type="text" id="start-search" oninput="WebDesk.filterStartMenu(this.value)" placeholder="Search applications..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-brand-500" />
     <div id="start-list" class="max-h-72 overflow-y-auto space-y-1 pr-1"></div>
     <div class="mt-3 pt-2.5 border-t border-white/10 flex justify-between text-xs text-slate-400">
-      <button onclick="WebDesk.openApp('settings'); WebDesk.closePopups();" class="p-1 hover:text-white">Settings</button>
-      <button onclick="WebDesk.openApp('uploader'); WebDesk.closePopups();" class="p-1 text-emerald-400 hover:text-emerald-300 font-medium">+ Upload Custom App</button>
+      <button onclick="WebDesk.openApp('appmanager'); WebDesk.closePopups();" class="text-cyan-400 hover:underline">Manage & Uninstall Apps</button>
+      <button onclick="WebDesk.openApp('codevault'); WebDesk.closePopups();" class="text-amber-300 hover:underline">&lt;/&gt; Code Vault</button>
+      <button onclick="WebDesk.openApp('settings'); WebDesk.closePopups();" class="hover:text-white">Settings</button>
     </div>
   </div>
 
   <!-- CONTEXT MENU -->
-  <div id="context-menu" class="hidden fixed z-50 w-52 glass rounded-2xl py-1 text-xs text-slate-200 win-shadow border border-white/15 pointer-events-auto">
-    <button onclick="WebDesk.openApp('uploader'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2"><span>+</span> Install / Upload App</button>
-    <button onclick="WebDesk.openApp('notes'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2"><span>📝</span> New Scratchpad Note</button>
-    <button onclick="WebDesk.openApp('files'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2"><span>📁</span> Open File Manager</button>
-    <button onclick="WebDesk.addStickyWidget(); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-amber-300"><span>📌</span> Add Desktop Widget</button>
+  <div id="context-menu" class="hidden fixed z-50 w-56 glass rounded-2xl py-1 text-xs text-slate-200 win-shadow border border-white/15 pointer-events-auto">
+    <button onclick="WebDesk.openApp('browser'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-blue-300"><span>🌐</span> Open WebSurfer Browser</button>
+    <button onclick="WebDesk.openApp('pwainstall'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-cyan-300"><span>🔗</span> Install PWA via URL</button>
+    <button onclick="WebDesk.openApp('uploader'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2"><span>📦</span> Upload Custom App Code</button>
+    <button onclick="WebDesk.openApp('appmanager'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-amber-300"><span>⚙️</span> Uninstall / Hide Apps</button>
+    <button onclick="WebDesk.openApp('codevault'); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-emerald-300"><span>📋</span> Copy Code.gs / Manifest</button>
     <div class="h-px bg-white/10 my-1"></div>
-    <button onclick="WebDesk.syncAll(); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-cyan-400"><span>☁️</span> Sync Google Sheets</button>
+    <button onclick="WebDesk.addStickyWidget(); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-amber-300"><span>📌</span> Add Desktop Widget</button>
+    <button onclick="WebDesk.syncAll(); WebDesk.closePopups();" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-cyan-400"><span>☁️</span> Sync Google Sheets & Drive</button>
     <button onclick="location.reload()" class="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center gap-2 text-slate-400"><span>↺</span> Refresh Desktop</button>
   </div>
 
@@ -252,6 +271,9 @@
         windows: {},
         topZ: 100,
         apps: [],
+        allAppsMaster: [],
+        hiddenAppIds: JSON.parse(localStorage.getItem('wd_hidden_apps') || '[]'),
+        draggedAppId: null,
         sysConfig: {
           theme: 'default',
           webhookUrl: localStorage.getItem('webdesk_sync_url') || '',
@@ -331,10 +353,15 @@
 
         if (hash === saved || input === 'admin123') {
           const lock = document.getElementById('lock-screen');
-          lock.style.display = 'none'; // Unblocks hit testing entirely
+          lock.style.display = 'none';
           this.state.unlocked = true;
           this.playChime('chime');
           this.notify('Workstation Active', 'Session unlocked and verified.');
+
+          // Auto-init cloud workspace if webhook configured but never initialized
+          if (this.state.sysConfig.webhookUrl && !localStorage.getItem('wd_cloud_initialized')) {
+            this.initMasterCloudWorkspace(false);
+          }
         } else {
           const err = document.getElementById('lock-err');
           err.innerText = 'Incorrect master password.';
@@ -359,68 +386,172 @@
       },
 
       registerApplications() {
-        this.state.apps = [
-          { id: 'todo', name: 'Task Planner', icon: '✅', category: 'Productivity', width: 620, height: 480, render: this.appsView.todo },
-          { id: 'calendar', name: 'Calendar & Events', icon: '📅', category: 'Productivity', width: 660, height: 500, render: this.appsView.calendar },
-          { id: 'reminders', name: 'Reminders & Alerts', icon: '⏰', category: 'Productivity', width: 500, height: 420, render: this.appsView.reminders },
-          { id: 'daystogo', name: 'Days to Go', icon: '⏳', category: 'Productivity', width: 480, height: 440, render: this.appsView.daystogo },
-          { id: 'timer', name: 'Timer & Alarm', icon: '⏱️', category: 'Utilities', width: 460, height: 420, render: this.appsView.timer },
-          { id: 'docs', name: 'Word Writer', icon: '📄', category: 'Productivity', width: 720, height: 520, render: this.appsView.docs },
-          { id: 'sheets', name: 'Grid Excel Sheet', icon: '📊', category: 'Productivity', width: 750, height: 520, render: this.appsView.sheets },
-          { id: 'slides', name: 'Slide Deck Maker', icon: '🗂️', category: 'Productivity', width: 740, height: 520, render: this.appsView.slides },
-          { id: 'notes', name: 'Markdown Notes', icon: '📝', category: 'Productivity', width: 680, height: 500, render: this.appsView.notes },
-          { id: 'widgetnotes', name: 'Widget Notes', icon: '📌', category: 'Productivity', width: 440, height: 400, render: this.appsView.widgetnotes },
-          { id: 'pdf', name: 'PDF Reader & Annotator', icon: '📕', category: 'Utilities', width: 680, height: 520, render: this.appsView.pdf },
-          { id: 'files', name: 'File Drive Explorer', icon: '📁', category: 'System', width: 700, height: 500, render: this.appsView.files },
-          { id: 'media', name: 'Media Player', icon: '▶️', category: 'Media', width: 620, height: 460, render: this.appsView.media },
-          { id: 'radio', name: 'Live Web Radio', icon: '📻', category: 'Media', width: 520, height: 460, render: this.appsView.radio },
-          { id: 'recorder', name: 'Voice Memo Recorder', icon: '🎙️', category: 'Media', width: 480, height: 440, render: this.appsView.recorder },
-          { id: 'paint', name: 'Paint & Canvas', icon: '🎨', category: 'Creative', width: 720, height: 520, render: this.appsView.paint },
-          { id: 'calc', name: 'Scientific Calculator', icon: '🧮', category: 'Utilities', width: 380, height: 520, render: this.appsView.calc },
-          { id: 'news', name: 'RSS News Reader', icon: '📰', category: 'Internet', width: 660, height: 500, render: this.appsView.news },
-          { id: 'contacts', name: 'Contacts Book', icon: '👤', category: 'Utilities', width: 560, height: 480, render: this.appsView.contacts },
-          { id: 'terminal', name: 'Terminal Shell', icon: '💻', category: 'Developer', width: 640, height: 440, render: this.appsView.terminal },
-          { id: 'codepad', name: 'Code Pad Sandbox', icon: '⚡', category: 'Developer', width: 740, height: 520, render: this.appsView.codepad },
-          { id: 'storage', name: 'Storage Diagnostics', icon: '📊', category: 'System', width: 500, height: 460, render: this.appsView.storage },
-          { id: 'weather', name: 'Weather Forecast', icon: '⛅', category: 'Internet', width: 560, height: 460, render: this.appsView.weather },
-          { id: 'habits', name: 'Habit Tracker', icon: '🎯', category: 'Productivity', width: 560, height: 480, render: this.appsView.habits },
-          { id: 'expenses', name: 'Expense Ledger', icon: '💰', category: 'Finance', width: 620, height: 480, render: this.appsView.expenses },
-          { id: 'vault', name: 'Password Vault', icon: '🔐', category: 'Security', width: 580, height: 480, render: this.appsView.vault },
-          { id: 'worldclock', name: 'World Clock Matrix', icon: '🌐', category: 'Utilities', width: 580, height: 460, render: this.appsView.worldclock },
-          { id: 'uploader', name: 'App Store / Uploader', icon: '📦', category: 'System', width: 720, height: 560, render: this.appsView.uploader },
-          { id: 'settings', name: 'System Settings', icon: '⚙️', category: 'System', width: 660, height: 540, render: this.appsView.settings },
-          { id: 'spec', name: 'Requirements & Spec', icon: '📋', category: 'System', width: 740, height: 540, render: this.appsView.spec }
+        const coreApps = [
+          { id: 'browser', name: 'WebSurfer Browser', icon: '🌐', category: 'Internet', width: 780, height: 560, isCore: true, render: this.appsView.browser },
+          { id: 'pwainstall', name: 'PWA Web Installer', icon: '🔗', category: 'System', width: 640, height: 500, isCore: true, render: this.appsView.pwainstall },
+          { id: 'appmanager', name: 'App Manager', icon: '⚙️', category: 'System', width: 700, height: 540, isCore: true, render: this.appsView.appmanager },
+          { id: 'codevault', name: 'Developer Code Vault', icon: '📋', category: 'Developer', width: 720, height: 540, isCore: true, render: this.appsView.codevault },
+          { id: 'todo', name: 'Task Planner', icon: '✅', category: 'Productivity', width: 640, height: 500, isCore: true, render: this.appsView.todo },
+          { id: 'calendar', name: 'Calendar & Events', icon: '📅', category: 'Productivity', width: 680, height: 520, isCore: true, render: this.appsView.calendar },
+          { id: 'reminders', name: 'Reminders & Alerts', icon: '⏰', category: 'Productivity', width: 520, height: 440, isCore: true, render: this.appsView.reminders },
+          { id: 'daystogo', name: 'Days to Go', icon: '⏳', category: 'Productivity', width: 500, height: 460, isCore: true, render: this.appsView.daystogo },
+          { id: 'timer', name: 'Timer & Alarm', icon: '⏱️', category: 'Utilities', width: 480, height: 440, isCore: true, render: this.appsView.timer },
+          { id: 'docs', name: 'Word Writer Pro', icon: '📄', category: 'Productivity', width: 760, height: 550, isCore: true, render: this.appsView.docs },
+          { id: 'sheets', name: 'Grid Excel Sheet', icon: '📊', category: 'Productivity', width: 780, height: 550, isCore: true, render: this.appsView.sheets },
+          { id: 'slides', name: 'Slide Deck Studio', icon: '🗂️', category: 'Productivity', width: 760, height: 540, isCore: true, render: this.appsView.slides },
+          { id: 'notes', name: 'Markdown Notes', icon: '📝', category: 'Productivity', width: 700, height: 520, isCore: true, render: this.appsView.notes },
+          { id: 'widgetnotes', name: 'Widget Notes', icon: '📌', category: 'Productivity', width: 460, height: 420, isCore: true, render: this.appsView.widgetnotes },
+          { id: 'pdf', name: 'PDF Reader & Annotator', icon: '📕', category: 'Utilities', width: 700, height: 540, isCore: true, render: this.appsView.pdf },
+          { id: 'files', name: 'File Drive Explorer', icon: '📁', category: 'System', width: 720, height: 520, isCore: true, render: this.appsView.files },
+          { id: 'media', name: 'Media Player Pro', icon: '▶️', category: 'Media', width: 640, height: 480, isCore: true, render: this.appsView.media },
+          { id: 'radio', name: 'Live Web Radio', icon: '📻', category: 'Media', width: 540, height: 480, isCore: true, render: this.appsView.radio },
+          { id: 'recorder', name: 'Voice Memo Recorder', icon: '🎙️', category: 'Media', width: 500, height: 460, isCore: true, render: this.appsView.recorder },
+          { id: 'paint', name: 'Paint & Canvas Studio', icon: '🎨', category: 'Creative', width: 740, height: 540, isCore: true, render: this.appsView.paint },
+          { id: 'calc', name: 'Scientific Calculator', icon: '🧮', category: 'Utilities', width: 400, height: 540, isCore: true, render: this.appsView.calc },
+          { id: 'news', name: 'RSS News Reader', icon: '📰', category: 'Internet', width: 680, height: 520, isCore: true, render: this.appsView.news },
+          { id: 'contacts', name: 'Contacts Directory', icon: '👤', category: 'Utilities', width: 580, height: 500, isCore: true, render: this.appsView.contacts },
+          { id: 'terminal', name: 'Terminal Shell', icon: '💻', category: 'Developer', width: 660, height: 460, isCore: true, render: this.appsView.terminal },
+          { id: 'codepad', name: 'CodePad Sandbox', icon: '⚡', category: 'Developer', width: 760, height: 540, isCore: true, render: this.appsView.codepad },
+          { id: 'storage', name: 'Storage Diagnostics', icon: '📊', category: 'System', width: 520, height: 480, isCore: true, render: this.appsView.storage },
+          { id: 'weather', name: 'Live Weather', icon: '⛅', category: 'Internet', width: 580, height: 480, isCore: true, render: this.appsView.weather },
+          { id: 'habits', name: 'Habit Tracker', icon: '🎯', category: 'Productivity', width: 580, height: 500, isCore: true, render: this.appsView.habits },
+          { id: 'expenses', name: 'Expense Ledger', icon: '💰', category: 'Finance', width: 640, height: 500, isCore: true, render: this.appsView.expenses },
+          { id: 'vault', name: 'Password Vault', icon: '🔐', category: 'Security', width: 600, height: 500, isCore: true, render: this.appsView.vault },
+          { id: 'worldclock', name: 'World Clock Matrix', icon: '🌐', category: 'Utilities', width: 600, height: 480, isCore: true, render: this.appsView.worldclock },
+          { id: 'uploader', name: 'Code App Uploader', icon: '📦', category: 'System', width: 740, height: 560, isCore: true, render: this.appsView.uploader },
+          { id: 'settings', name: 'System Settings', icon: '⚙️', category: 'System', width: 680, height: 560, isCore: true, render: this.appsView.settings },
+          { id: 'spec', name: 'Requirements & Spec', icon: '📋', category: 'System', width: 760, height: 560, isCore: true, render: this.appsView.spec }
         ];
 
+        // Load custom installed apps (URL PWAs & uploaded code)
         const customApps = JSON.parse(localStorage.getItem('webdesk_custom_apps') || '[]');
         customApps.forEach(c => {
-          this.state.apps.push({
+          coreApps.push({
             id: c.id,
             name: c.name,
-            icon: c.icon || '⚡',
-            category: 'Custom Upload',
-            customHtml: c.code,
-            width: 720,
-            height: 520,
+            icon: c.icon || '🌐',
+            category: c.isPwaUrl ? 'PWA Web App' : 'Custom Upload',
+            isCustom: true,
+            isCore: false,
+            isPwaUrl: !!c.isPwaUrl,
+            url: c.url,
+            code: c.code,
+            width: 760,
+            height: 540,
             render: (body) => {
               const ifr = document.createElement('iframe');
               ifr.className = 'w-full h-full border-none bg-white';
+              ifr.setAttribute('allow', 'camera; microphone; geolocation; fullscreen; clipboard-read; clipboard-write');
               ifr.sandbox = 'allow-scripts allow-same-origin allow-forms allow-modals allow-popups';
               body.appendChild(ifr);
-              ifr.srcdoc = c.code;
+              if (c.isPwaUrl) {
+                ifr.src = c.url;
+              } else {
+                ifr.srcdoc = c.code;
+              }
             }
           });
         });
+
+        this.state.allAppsMaster = [...coreApps];
+
+        // Filter out hidden/deleted apps
+        const visibleApps = coreApps.filter(a => !this.state.hiddenAppIds.includes(a.id));
+
+        // Apply saved ordering of shortcuts if available
+        const savedOrder = JSON.parse(localStorage.getItem('wd_app_order') || 'null');
+        if (savedOrder && Array.isArray(savedOrder)) {
+          visibleApps.sort((a, b) => {
+            const idxA = savedOrder.indexOf(a.id);
+            const idxB = savedOrder.indexOf(b.id);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return 0;
+          });
+        }
+
+        this.state.apps = visibleApps;
+      },
+
+      saveAppOrder() {
+        const order = this.state.apps.map(a => a.id);
+        localStorage.setItem('wd_app_order', JSON.stringify(order));
+      },
+
+      moveAppOrder(appId, dir) {
+        const idx = this.state.apps.findIndex(a => a.id === appId);
+        if (idx === -1) return;
+        const newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= this.state.apps.length) return;
+        const temp = this.state.apps[idx];
+        this.state.apps[idx] = this.state.apps[newIdx];
+        this.state.apps[newIdx] = temp;
+        this.saveAppOrder();
+        this.renderDesktopIcons();
+        this.renderStartMenu();
+      },
+
+      toggleHideApp(appId) {
+        if (this.state.hiddenAppIds.includes(appId)) {
+          this.state.hiddenAppIds = this.state.hiddenAppIds.filter(id => id !== appId);
+        } else {
+          this.state.hiddenAppIds.push(appId);
+          this.closeWindow(appId);
+        }
+        localStorage.setItem('wd_hidden_apps', JSON.stringify(this.state.hiddenAppIds));
+        this.registerApplications();
+        this.renderDesktopIcons();
+        this.renderStartMenu();
+      },
+
+      restoreAllHiddenApps() {
+        this.state.hiddenAppIds = [];
+        localStorage.setItem('wd_hidden_apps', JSON.stringify([]));
+        this.registerApplications();
+        this.renderDesktopIcons();
+        this.renderStartMenu();
+        this.notify('Apps Restored', 'All core and default applications restored to desktop.');
       },
 
       renderDesktopIcons() {
         const grid = document.getElementById('desktop-grid');
         grid.innerHTML = '';
 
-        this.state.apps.forEach(app => {
+        this.state.apps.forEach((app) => {
           const item = document.createElement('div');
-          item.className = 'flex flex-col items-center justify-center p-2 rounded-2xl w-full aspect-square hover:bg-white/15 active:scale-90 transition cursor-pointer text-center group select-none touch-manipulation';
-          
+          item.className = 'flex flex-col items-center justify-center p-2 rounded-2xl w-20 h-24 hover:bg-white/15 active:scale-90 transition cursor-pointer text-center group select-none touch-manipulation relative';
+          item.draggable = true;
+          item.dataset.appId = app.id;
+
+          item.ondragstart = (e) => {
+            this.state.draggedAppId = app.id;
+            item.classList.add('dragging-icon');
+            e.dataTransfer.setData('text/plain', app.id);
+          };
+          item.ondragend = () => {
+            item.classList.remove('dragging-icon');
+          };
+          item.ondragover = (e) => {
+            e.preventDefault();
+          };
+          item.ondrop = (e) => {
+            e.preventDefault();
+            const sourceId = this.state.draggedAppId || e.dataTransfer.getData('text/plain');
+            if (sourceId && sourceId !== app.id) {
+              const srcIdx = this.state.apps.findIndex(a => a.id === sourceId);
+              const tgtIdx = this.state.apps.findIndex(a => a.id === app.id);
+              if (srcIdx !== -1 && tgtIdx !== -1) {
+                const moved = this.state.apps.splice(srcIdx, 1)[0];
+                this.state.apps.splice(tgtIdx, 0, moved);
+                this.saveAppOrder();
+                this.renderDesktopIcons();
+                this.renderStartMenu();
+                this.notify('Shortcut Rearranged', `${moved.name} moved.`);
+              }
+            }
+          };
+
           item.onclick = (e) => {
             e.stopPropagation();
             this.openApp(app.id);
@@ -487,8 +618,8 @@
         const m = document.getElementById('context-menu');
         const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 10;
         const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 10;
-        m.style.left = `${Math.min(window.innerWidth - 220, clientX)}px`;
-        m.style.top = `${Math.min(window.innerHeight - 240, clientY)}px`;
+        m.style.left = `${Math.min(window.innerWidth - 240, clientX)}px`;
+        m.style.top = `${Math.min(window.innerHeight - 260, clientY)}px`;
         m.classList.remove('hidden');
       },
 
@@ -506,15 +637,16 @@
           return;
         }
 
-        const app = this.state.apps.find(a => a.id === appId);
+        const app = this.state.allAppsMaster.find(a => a.id === appId) || this.state.apps.find(a => a.id === appId);
         if (!app) return;
 
-        const isMobileOrTablet = window.innerWidth < 850;
-        const initialW = isMobileOrTablet ? window.innerWidth : Math.min(window.innerWidth - 30, app.width || 620);
-        const initialH = isMobileOrTablet ? window.innerHeight - 56 : Math.min(window.innerHeight - 70, app.height || 480);
+        const isTabletOrMobile = window.innerWidth < 850;
+        const isIpad = /Macintosh|iPad/.test(navigator.userAgent) && 'ontouchend' in document;
+        const initialW = isTabletOrMobile ? window.innerWidth : Math.min(window.innerWidth - 30, app.width || 640);
+        const initialH = isTabletOrMobile ? window.innerHeight - 56 : Math.min(window.innerHeight - 70, app.height || 500);
         const cascade = (Object.keys(this.state.windows).length * 24) % 140;
-        const initialX = isMobileOrTablet ? 0 : Math.max(10, Math.min(window.innerWidth - initialW - 20, 40 + cascade));
-        const initialY = isMobileOrTablet ? 0 : Math.max(10, Math.min(window.innerHeight - initialH - 60, 20 + cascade));
+        const initialX = isTabletOrMobile ? 0 : Math.max(10, Math.min(window.innerWidth - initialW - 20, 40 + cascade));
+        const initialY = isTabletOrMobile ? 0 : Math.max(10, Math.min(window.innerHeight - initialH - 60, 20 + cascade));
 
         this.state.topZ++;
         this.state.windows[appId] = {
@@ -522,7 +654,7 @@
           y: initialY,
           width: initialW,
           height: initialH,
-          maximized: isMobileOrTablet,
+          maximized: isTabletOrMobile && !isIpad,
           minimized: false,
           zIndex: this.state.topZ
         };
@@ -595,7 +727,7 @@
           } catch(e){}
         }
 
-        const app = this.state.apps.find(a => a.id === appId);
+        const app = this.state.allAppsMaster.find(a => a.id === appId) || this.state.apps.find(a => a.id === appId);
         if (app) {
           body.innerHTML = '';
           app.render(body);
@@ -608,14 +740,15 @@
         let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
 
         const onPointerDown = (e) => {
-          if (e.target.closest('button')) return;
+          if (e.target.closest('button') || e.target.closest('input')) return;
           this.bringToFront(appId);
-          if (this.state.windows[appId] && this.state.windows[appId].maximized && window.innerWidth < 850) {
+          if (this.state.windows[appId] && this.state.windows[appId].maximized && window.innerWidth < 640) {
             return;
           }
           isDragging = true;
-          startX = e.clientX || (e.touches && e.touches[0].clientX);
-          startY = e.clientY || (e.touches && e.touches[0].clientY);
+          const point = e.touches ? e.touches[0] : e;
+          startX = point.clientX;
+          startY = point.clientY;
           initialLeft = winEl.offsetLeft;
           initialTop = winEl.offsetTop;
 
@@ -628,12 +761,13 @@
 
         const onPointerMove = (e) => {
           if (!isDragging) return;
-          const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-          const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-          if (clientX === undefined || clientY === undefined) return;
+          const point = e.touches ? e.touches[0] : e;
+          if (!point) return;
 
-          const dx = clientX - startX;
-          const dy = clientY - startY;
+          if (e.cancelable) e.preventDefault();
+
+          const dx = point.clientX - startX;
+          const dy = point.clientY - startY;
 
           const newX = Math.max(-winEl.offsetWidth + 80, Math.min(window.innerWidth - 60, initialLeft + dx));
           const newY = Math.max(0, Math.min(window.innerHeight - 60, initialTop + dy));
@@ -675,20 +809,21 @@
         const winEl = document.getElementById(`win-${appId}`);
         if (!winEl) return;
 
-        const startX = e.clientX || (e.touches && e.touches[0].clientX);
-        const startY = e.clientY || (e.touches && e.touches[0].clientY);
+        const point = e.touches ? e.touches[0] : e;
+        const startX = point.clientX;
+        const startY = point.clientY;
         const startW = winEl.offsetWidth;
         const startH = winEl.offsetHeight;
         const startL = winEl.offsetLeft;
         const startT = winEl.offsetTop;
 
         const onMove = (ev) => {
-          const clientX = ev.clientX || (ev.touches && ev.touches[0].clientX);
-          const clientY = ev.clientY || (ev.touches && ev.touches[0].clientY);
-          if (clientX === undefined || clientY === undefined) return;
+          if (ev.cancelable) ev.preventDefault();
+          const p = ev.touches ? ev.touches[0] : ev;
+          if (!p) return;
 
-          const dx = clientX - startX;
-          const dy = clientY - startY;
+          const dx = p.clientX - startX;
+          const dy = p.clientY - startY;
           let newW = startW, newH = startH, newX = startL, newY = startT;
           const minW = 280, minH = 180;
 
@@ -778,7 +913,7 @@
         bar.innerHTML = '';
 
         Object.keys(this.state.windows).forEach(appId => {
-          const app = this.state.apps.find(a => a.id === appId);
+          const app = this.state.allAppsMaster.find(a => a.id === appId) || this.state.apps.find(a => a.id === appId);
           const win = this.state.windows[appId];
           if (!app) return;
 
@@ -803,7 +938,585 @@
         });
       },
 
+      // Initialize Master Cloud Partitioning (Sheets Tabs & Drive App Folders)
+      async initMasterCloudWorkspace(showToast = true) {
+        if (!this.state.sysConfig.webhookUrl) {
+          if (showToast) alert('Please enter and save your Google Apps Script Webhook URL first.');
+          return;
+        }
+
+        if (showToast) this.notify('Cloud Initializing', 'Setting up master Drive folders & Sheets tabs...');
+
+        const appsManifest = this.state.allAppsMaster.map(a => ({
+          id: a.id,
+          name: a.name,
+          category: a.category
+        }));
+
+        try {
+          await fetch(this.state.sysConfig.webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'init_master_workspace',
+              apps: appsManifest,
+              timestamp: new Date().toISOString()
+            })
+          });
+
+          localStorage.setItem('wd_cloud_initialized', 'true');
+          if (showToast) this.notify('Cloud Configured', 'All Drive folders and Sheets tabs created!');
+        } catch (e) {
+          console.warn('Init error', e);
+        }
+      },
+
       appsView: {
+        // 4. Advanced Internet Browser Application
+        browser(el) {
+          let currentUrl = 'https://en.wikipedia.org';
+          let tabs = [
+            { id: 1, title: 'Wikipedia', url: 'https://en.wikipedia.org' },
+            { id: 2, title: 'DuckDuckGo', url: 'https://duckduckgo.com' }
+          ];
+          let activeTab = 1;
+
+          el.innerHTML = `
+            <div class="flex flex-col h-full bg-slate-950 text-xs">
+              <!-- Browser Tabs Strip -->
+              <div class="flex items-center gap-1 px-2 pt-1.5 bg-slate-900 border-b border-white/10 overflow-x-auto" id="br-tabs"></div>
+
+              <!-- Browser Navigation Bar -->
+              <div class="flex items-center gap-2 p-2 bg-slate-900/90 border-b border-white/10">
+                <button id="br-back" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 active:scale-90" title="Back">◀</button>
+                <button id="br-fwd" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 active:scale-90" title="Forward">▶</button>
+                <button id="br-reload" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 active:scale-90" title="Reload">↺</button>
+                
+                <div class="flex-1 flex items-center bg-slate-950 border border-white/15 rounded-xl px-3 py-1.5">
+                  <span class="text-emerald-400 mr-2">🔒</span>
+                  <input id="br-omnibox" class="flex-1 bg-transparent border-none text-white text-xs outline-none font-mono" placeholder="Enter web URL or search..." value="${currentUrl}" />
+                  <button id="br-go" class="text-brand-500 font-bold ml-2">Go</button>
+                </div>
+
+                <button id="br-bm" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-amber-400" title="Bookmark URL">★</button>
+                <button id="br-newtab" class="p-1.5 rounded-lg bg-brand-600/30 text-brand-300 font-bold hover:bg-brand-600 active:scale-90" title="New Tab">+</button>
+              </div>
+
+              <!-- Browser Main Frame -->
+              <div class="flex-1 relative bg-white overflow-hidden">
+                <iframe id="br-frame" class="w-full h-full border-none" src="${currentUrl}" allow="camera; microphone; geolocation; fullscreen; clipboard-read; clipboard-write" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe>
+                <div id="br-block-warn" class="hidden absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center text-slate-200">
+                  <div class="text-4xl mb-3">🛡️</div>
+                  <div class="font-bold text-sm text-white mb-1">External Frame Protection</div>
+                  <p class="text-xs text-slate-400 max-w-sm mb-4">This website does not allow embedded iframe viewing due to strict CSP/X-Frame headers.</p>
+                  <a id="br-open-ext" href="${currentUrl}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-brand-600 rounded-xl text-white font-bold">Open in Native Tab</a>
+                </div>
+              </div>
+            </div>
+          `;
+
+          const frame = el.querySelector('#br-frame');
+          const omni = el.querySelector('#br-omnibox');
+          const warn = el.querySelector('#br-block-warn');
+          const openExt = el.querySelector('#br-open-ext');
+          const tabsBar = el.querySelector('#br-tabs');
+
+          const navigate = (input) => {
+            let u = input.trim();
+            if (!u) return;
+            if (!u.includes('.') || u.includes(' ')) {
+              u = `https://duckduckgo.com/?q=${encodeURIComponent(u)}`;
+            } else if (!u.startsWith('http://') && !u.startsWith('https://')) {
+              u = 'https://' + u;
+            }
+            currentUrl = u;
+            omni.value = u;
+            openExt.href = u;
+            frame.src = u;
+            warn.classList.add('hidden');
+
+            const t = tabs.find(x => x.id === activeTab);
+            if (t) {
+              t.url = u;
+              try { t.title = new URL(u).hostname.replace('www.', ''); } catch(e) { t.title = 'Web Page'; }
+              renderTabs();
+            }
+          };
+
+          const renderTabs = () => {
+            tabsBar.innerHTML = '';
+            tabs.forEach(t => {
+              const tabEl = document.createElement('div');
+              tabEl.className = `flex items-center gap-2 px-3 py-1.5 rounded-t-xl text-xs font-semibold cursor-pointer border-t border-x border-white/10 ${
+                t.id === activeTab ? 'bg-slate-950 text-white' : 'bg-slate-900/60 text-slate-400 hover:bg-slate-800'
+              }`;
+              tabEl.innerHTML = `
+                <span class="truncate max-w-[110px]">${t.title}</span>
+                ${tabs.length > 1 ? `<span class="text-slate-500 hover:text-rose-400 ml-1">✕</span>` : ''}
+              `;
+              tabEl.onclick = (e) => {
+                if (e.target.innerText === '✕') {
+                  e.stopPropagation();
+                  tabs = tabs.filter(x => x.id !== t.id);
+                  if (activeTab === t.id) activeTab = tabs[0].id;
+                  renderTabs();
+                  const cur = tabs.find(x => x.id === activeTab);
+                  if (cur) navigate(cur.url);
+                  return;
+                }
+                activeTab = t.id;
+                renderTabs();
+                navigate(t.url);
+              };
+              tabsBar.appendChild(tabEl);
+            });
+          };
+
+          el.querySelector('#br-go').onclick = () => navigate(omni.value);
+          omni.onkeydown = (e) => { if (e.key === 'Enter') navigate(omni.value); };
+          el.querySelector('#br-reload').onclick = () => { frame.src = currentUrl; };
+          el.querySelector('#br-back').onclick = () => { try { frame.contentWindow.history.back(); } catch(e){} };
+          el.querySelector('#br-fwd').onclick = () => { try { frame.contentWindow.history.forward(); } catch(e){} };
+          el.querySelector('#br-newtab').onclick = () => {
+            const newId = Date.now();
+            tabs.push({ id: newId, title: 'New Tab', url: 'https://duckduckgo.com' });
+            activeTab = newId;
+            renderTabs();
+            navigate('https://duckduckgo.com');
+          };
+          el.querySelector('#br-bm').onclick = () => {
+            WebDesk.notify('Bookmark Saved', currentUrl);
+          };
+
+          renderTabs();
+        },
+
+        // 1 & 2: App Manager & Uninstaller for Core and Custom Apps
+        appmanager(el) {
+          const draw = () => {
+            el.innerHTML = `
+              <div class="flex flex-col h-full p-4 overflow-y-auto text-xs space-y-4">
+                <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                  <div>
+                    <div class="font-bold text-sm text-cyan-400">Application Manager, Uninstaller & Visibility</div>
+                    <div class="text-[11px] text-slate-400">Rearrange, hide, or uninstall both core and installed applications</div>
+                  </div>
+                  <button id="mgr-restore-all" class="px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl font-bold hover:bg-amber-500/30 active:scale-95">
+                    Restore All Hidden Apps
+                  </button>
+                </div>
+
+                <!-- Apps Directory -->
+                <div class="space-y-2 flex-1 overflow-y-auto pr-1" id="mgr-list"></div>
+              </div>
+            `;
+
+            el.querySelector('#mgr-restore-all').onclick = () => {
+              WebDesk.restoreAllHiddenApps();
+              draw();
+            };
+
+            const list = el.querySelector('#mgr-list');
+            WebDesk.state.allAppsMaster.forEach((app) => {
+              const isHidden = WebDesk.state.hiddenAppIds.includes(app.id);
+              const row = document.createElement('div');
+              row.className = `p-3 rounded-2xl border flex items-center justify-between gap-2 transition ${
+                isHidden ? 'bg-slate-950/60 border-white/5 opacity-60' : 'bg-slate-900 border-white/10'
+              }`;
+
+              row.innerHTML = `
+                <div class="flex items-center gap-3 truncate">
+                  <span class="text-2xl">${app.icon}</span>
+                  <div class="truncate">
+                    <div class="font-bold text-white text-xs truncate flex items-center gap-2">
+                      ${app.name}
+                      ${isHidden ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded uppercase font-mono">Hidden</span>' : ''}
+                    </div>
+                    <div class="text-[10px] text-slate-400">${app.category} • ${app.isCore ? 'Core Application' : 'User Installed'}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-slate-300 font-bold active:scale-90" title="Move Up">▲</button>
+                  <button class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-slate-300 font-bold active:scale-90" title="Move Down">▼</button>
+                  <button class="px-3 py-1 rounded-lg font-bold transition active:scale-95 btn-toggle-vis ${
+                    isHidden ? 'bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600 hover:text-white' : 'bg-amber-600/30 text-amber-300 hover:bg-amber-600 hover:text-white'
+                  }">
+                    ${isHidden ? 'Show App' : 'Hide App'}
+                  </button>
+                  ${app.isCustom ? `
+                    <button class="px-3 py-1 bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg font-bold transition active:scale-95 btn-del">
+                      Delete
+                    </button>
+                  ` : `
+                    <button class="px-3 py-1 bg-rose-950/40 text-rose-400 hover:bg-rose-600 hover:text-white rounded-lg font-bold transition active:scale-95 btn-core-del" title="Uninstall/Hide Core App">
+                      Uninstall
+                    </button>
+                  `}
+                </div>
+              `;
+
+              const [btnUp, btnDown] = row.querySelectorAll('button');
+              btnUp.onclick = () => { WebDesk.moveAppOrder(app.id, -1); draw(); };
+              btnDown.onclick = () => { WebDesk.moveAppOrder(app.id, 1); draw(); };
+
+              row.querySelector('.btn-toggle-vis').onclick = () => {
+                WebDesk.toggleHideApp(app.id);
+                draw();
+              };
+
+              const btnDel = row.querySelector('.btn-del');
+              if (btnDel) {
+                btnDel.onclick = () => {
+                  if (confirm(`Permanently delete custom app "${app.name}"?`)) {
+                    let customApps = JSON.parse(localStorage.getItem('webdesk_custom_apps') || '[]');
+                    customApps = customApps.filter(c => c.id !== app.id);
+                    localStorage.setItem('webdesk_custom_apps', JSON.stringify(customApps));
+                    WebDesk.closeWindow(app.id);
+                    WebDesk.registerApplications();
+                    WebDesk.renderDesktopIcons();
+                    WebDesk.renderStartMenu();
+                    WebDesk.notify('App Deleted', `${app.name} removed.`);
+                    draw();
+                  }
+                };
+              }
+
+              const btnCoreDel = row.querySelector('.btn-core-del');
+              if (btnCoreDel) {
+                btnCoreDel.onclick = () => {
+                  if (confirm(`Uninstall/Hide core app "${app.name}" from your desktop? (You can restore it anytime in App Manager)`)) {
+                    WebDesk.toggleHideApp(app.id);
+                    WebDesk.notify('Core App Uninstalled', `${app.name} hidden.`);
+                    draw();
+                  }
+                };
+              }
+
+              list.appendChild(row);
+            });
+          };
+          draw();
+        },
+
+        // PWA URL Installer
+        pwainstall(el) {
+          el.innerHTML = `
+            <div class="flex flex-col h-full p-4 overflow-y-auto space-y-4 text-xs">
+              <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10 space-y-3">
+                <div class="font-bold text-sm text-cyan-400">🌐 Install PWA Web App by URL</div>
+                <p class="text-slate-400 text-[11px]">Enter any Progressive Web App or HTTPS website link to install it directly onto your desktop as a standalone app.</p>
+                <div class="space-y-2">
+                  <label class="text-[11px] text-slate-300">Application Name</label>
+                  <input id="pwa-name" placeholder="e.g. Photopea, Notion, Excalidraw, ChatGPT..." class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[11px] text-slate-300">Website URL (Must start with https://)</label>
+                  <input id="pwa-url" type="url" placeholder="https://www.photopea.com" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-[11px]">
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[11px] text-slate-300">Desktop Icon (Emoji)</label>
+                  <input id="pwa-icon" placeholder="🎨" value="🌐" class="w-20 text-center text-lg bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-white">
+                </div>
+                <button id="pwa-install-btn" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-white transition active:scale-95 touch-manipulation">
+                  Install PWA onto Desktop
+                </button>
+              </div>
+            </div>
+          `;
+
+          el.querySelector('#pwa-install-btn').onclick = () => {
+            const name = el.querySelector('#pwa-name').value.trim();
+            let url = el.querySelector('#pwa-url').value.trim();
+            const icon = el.querySelector('#pwa-icon').value.trim() || '🌐';
+
+            if (!name || !url) {
+              alert('Please enter both application name and URL.');
+              return;
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              url = 'https://' + url;
+            }
+
+            const customApps = JSON.parse(localStorage.getItem('webdesk_custom_apps') || '[]');
+            const newApp = {
+              id: `pwa_${Date.now()}`,
+              name,
+              icon,
+              url,
+              isPwaUrl: true
+            };
+            customApps.push(newApp);
+            localStorage.setItem('webdesk_custom_apps', JSON.stringify(customApps));
+
+            WebDesk.registerApplications();
+            WebDesk.renderDesktopIcons();
+            WebDesk.renderStartMenu();
+            WebDesk.notify('PWA Installed', `${name} added to desktop.`);
+            WebDesk.openApp(newApp.id);
+          };
+        },
+
+        // Developer Code Vault: Instant Copier for Code.gs, manifest.json & sw.js
+        codevault(el) {
+          const code_gs = `/**
+ * WebDesk Ultra Pro - Google Apps Script Synchronization Engine (Code.gs)
+ * Handles auto-sheet creation, headers, audit trails, and Google Drive binary files
+ */
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return createJsonResponse({ status: "error", message: "Empty payload received" });
+    }
+
+    var payload = JSON.parse(e.postData.contents);
+    var action = payload.action || "sync_data";
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // 1. First-time Registration / Master Partitioning
+    if (action === "init_master_workspace") {
+      return handleMasterWorkspaceInit(ss, payload);
+    }
+
+    // 2. Direct File/Media Uploads to App-Specific Folders
+    if (action === "upload_media") {
+      return handleMediaUpload(payload);
+    }
+
+    // 3. Custom Installed App Registry
+    if (action === "save_custom_app") {
+      return handleCustomAppStorage(ss, payload);
+    }
+
+    // 4. Default Multi-App Data Synchronization
+    return handleDataSync(ss, payload);
+  } catch (err) {
+    return createJsonResponse({ status: "error", error: err.toString() });
+  }
+}
+
+function doGet(e) {
+  var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "ping";
+  if (action === "ping") {
+    return createJsonResponse({ status: "ok", message: "WebDesk Apps Script listening." });
+  }
+  if (action === "fetch_all") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheets = ss.getSheets();
+    var result = {};
+    sheets.forEach(function(sh) {
+      var name = sh.getName();
+      if (name.startsWith("App_")) {
+        result[name.replace("App_", "")] = sh.getDataRange().getValues().slice(1);
+      }
+    });
+    return createJsonResponse({ status: "ok", data: result });
+  }
+  return createJsonResponse({ status: "ok" });
+}
+
+// Auto-Creates Master Drive Folder and Subfolders for Every App
+function handleMasterWorkspaceInit(ss, payload) {
+  var rootName = "WebDesk_Drive_Storage";
+  var folders = DriveApp.getFoldersByName(rootName);
+  var rootFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder(rootName);
+
+  var appList = payload.apps || [];
+  var createdFolders = [];
+  var createdSheets = [];
+
+  // Default core subfolders
+  var defaultFolders = ["General_Files", "Media_Player", "Voice_Memos", "Paint_Canvases", "Documents", "PDF_Docs"];
+  defaultFolders.forEach(function(df) {
+    var sub = rootFolder.getFoldersByName(df);
+    if (!sub.hasNext()) rootFolder.createFolder(df);
+  });
+
+  // Create dedicated tab and Drive folder for every registered application
+  appList.forEach(function(app) {
+    var safeName = (app.name || app.id).replace(/[^a-zA-Z0-9_ ]/g, "").trim().replace(/\\s+/g, "_");
+    
+    // 1. Google Drive App Subfolder
+    var subFolders = rootFolder.getFoldersByName(safeName);
+    if (!subFolders.hasNext()) {
+      rootFolder.createFolder(safeName);
+      createdFolders.push(safeName);
+    }
+
+    // 2. Google Sheet Dedicated Tab
+    var sheetName = "App_" + safeName.toUpperCase();
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.appendRow(["Timestamp", "App ID", "Record Type", "Data Payload (JSON)", "Checksum"]);
+      sheet.getRange("A1:E1").setFontWeight("bold").setBackground("#e2e8f0");
+      sheet.setFrozenRows(1);
+      createdSheets.push(sheetName);
+    }
+  });
+
+  return createJsonResponse({
+    status: "success",
+    message: "Master Workspace Initialized",
+    rootFolderUrl: rootFolder.getUrl(),
+    foldersCreated: createdFolders.length,
+    sheetsCreated: createdSheets.length
+  });
+}
+
+function handleDataSync(ss, payload) {
+  var appName = (payload.app || "GENERAL").toUpperCase().replace(/[^A-Z0-9_]/g, "_");
+  var sheetName = "App_" + appName;
+  var sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(["Timestamp", "App ID", "Record Type", "Data Payload", "Checksum"]);
+    sheet.getRange("A1:E1").setFontWeight("bold").setBackground("#e2e8f0");
+    sheet.setFrozenRows(1);
+  }
+
+  var timestamp = new Date();
+  var dataContent = typeof payload.data === "object" ? JSON.stringify(payload.data) : (payload.data || "");
+  var checksum = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, dataContent));
+  sheet.appendRow([timestamp, appName, "STATE_SYNC", dataContent, checksum]);
+
+  return createJsonResponse({ status: "success", app: appName, timestamp: timestamp });
+}
+
+function handleCustomAppStorage(ss, payload) {
+  var sheetName = "App_CUSTOM_REGISTRY";
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(["Installed At", "App ID", "Title", "Code Size (Bytes)", "Source Code"]);
+    sheet.getRange("A1:E1").setFontWeight("bold").setBackground("#dbeafe");
+    sheet.setFrozenRows(1);
+  }
+  sheet.appendRow([new Date(), payload.appId || ("app_" + Date.now()), payload.title || "Custom", (payload.code || "").length, payload.code || ""]);
+  return createJsonResponse({ status: "success", message: "Custom application saved" });
+}
+
+function handleMediaUpload(payload) {
+  var rootName = "WebDesk_Drive_Storage";
+  var folders = DriveApp.getFoldersByName(rootName);
+  var rootFolder = folders.hasNext() ? folders.next() : DriveApp.createFolder(rootName);
+
+  // Put in app subfolder if specified
+  var targetFolder = rootFolder;
+  if (payload.appFolder) {
+    var sub = rootFolder.getFoldersByName(payload.appFolder);
+    targetFolder = sub.hasNext() ? sub.next() : rootFolder.createFolder(payload.appFolder);
+  }
+
+  var fileName = payload.fileName || ("file_" + Date.now());
+  var decodedBytes = Utilities.base64Decode(payload.base64Data);
+  var blob = Utilities.newBlob(decodedBytes, payload.mimeType || "application/octet-stream", fileName);
+  var file = targetFolder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return createJsonResponse({ status: "success", fileUrl: file.getUrl() });
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}`;
+
+          const manifest_json = `{
+  "short_name": "WebDesk",
+  "name": "WebDesk Ultra OS v5.0",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/0ea5e9/ffffff?text=WD5",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/0ea5e9/ffffff?text=WD5",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#070b14",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "any"
+}`;
+
+          const sw_js = `const CACHE_NAME = 'webdesk-ultra-v5.0';
+const ASSETS = [
+  './index.html',
+  './manifest.json'
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    ))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+  if (e.request.url.includes('script.google.com') || e.request.method !== 'GET') {
+    return;
+  }
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});`;
+
+          el.innerHTML = `
+            <div class="flex flex-col h-full text-xs">
+              <div class="h-10 bg-slate-950 border-b border-white/10 px-3 flex items-center justify-between">
+                <div class="flex gap-1.5" id="cv-tabs">
+                  <button class="px-3 py-1 rounded-lg bg-brand-600 text-white font-bold cv-tab" data-target="gs">Code.gs</button>
+                  <button class="px-3 py-1 rounded-lg bg-white/10 text-slate-300 font-bold cv-tab" data-target="mf">manifest.json</button>
+                  <button class="px-3 py-1 rounded-lg bg-white/10 text-slate-300 font-bold cv-tab" data-target="sw">sw.js</button>
+                </div>
+                <button id="cv-copy" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-bold active:scale-95 touch-manipulation">
+                  Copy Code
+                </button>
+              </div>
+              <div class="flex-1 bg-slate-950 p-4 font-mono text-[11px] overflow-auto text-emerald-400">
+                <pre id="cv-pre" class="whitespace-pre">${code_gs}</pre>
+              </div>
+            </div>
+          `;
+
+          let current = 'gs';
+          const pre = el.querySelector('#cv-pre');
+          const tabs = el.querySelectorAll('.cv-tab');
+
+          tabs.forEach(tab => {
+            tab.onclick = () => {
+              tabs.forEach(t => { t.className = 'px-3 py-1 rounded-lg bg-white/10 text-slate-300 font-bold cv-tab'; });
+              tab.className = 'px-3 py-1 rounded-lg bg-brand-600 text-white font-bold cv-tab';
+              current = tab.dataset.target;
+              if (current === 'gs') pre.innerText = code_gs;
+              if (current === 'mf') pre.innerText = manifest_json;
+              if (current === 'sw') pre.innerText = sw_js;
+            };
+          });
+
+          el.querySelector('#cv-copy').onclick = () => {
+            navigator.clipboard.writeText(pre.innerText).then(() => {
+              WebDesk.notify('Copied to Clipboard', `Code for ${current.toUpperCase()} copied.`);
+            });
+          };
+        },
+
         todo(el) {
           let tasks = JSON.parse(localStorage.getItem('wd_todo_data') || '[]');
           if (!tasks.length) {
@@ -1001,19 +1714,34 @@
           el.innerHTML = `
             <div class="flex flex-col h-full font-mono text-xs">
               <div class="h-10 bg-slate-950 border-b border-white/10 px-3 flex items-center justify-between">
-                <div class="flex gap-1.5">
+                <div class="flex items-center gap-1.5">
                   <button class="px-2.5 py-1 bg-white/10 rounded font-bold active:scale-90 touch-manipulation" onclick="document.execCommand('bold')">B</button>
                   <button class="px-2.5 py-1 bg-white/10 rounded italic active:scale-90 touch-manipulation" onclick="document.execCommand('italic')">I</button>
                   <button class="px-2.5 py-1 bg-white/10 rounded underline active:scale-90 touch-manipulation" onclick="document.execCommand('underline')">U</button>
+                  <button class="px-2.5 py-1 bg-white/10 rounded active:scale-90 touch-manipulation" onclick="document.execCommand('insertUnorderedList')">• List</button>
+                  <select onchange="document.execCommand('formatBlock', false, this.value)" class="bg-slate-900 border border-white/10 rounded px-2 py-1 text-white">
+                    <option value="p">Paragraph</option>
+                    <option value="h1">Heading 1</option>
+                    <option value="h2">Heading 2</option>
+                    <option value="blockquote">Quote</option>
+                  </select>
                 </div>
-                <button id="dc-exp" class="px-2 py-1 text-slate-300 hover:text-white">Save HTML</button>
+                <div class="flex items-center gap-2">
+                  <span id="doc-words" class="text-slate-400 text-[10px]">0 words</span>
+                  <button id="dc-exp" class="px-2.5 py-1 bg-brand-600 text-white rounded-lg font-bold hover:bg-brand-500">Save HTML</button>
+                </div>
               </div>
               <div id="dc-editor" contenteditable="true" class="flex-1 bg-slate-900/50 p-4 text-slate-100 overflow-y-auto focus:outline-none leading-relaxed">
-                <h2>Document Editor</h2><p>Start writing rich content with instant cloud synchronization...</p>
+                <h2>Document Editor Pro</h2><p>Start writing rich documents with instant Google cloud storage...</p>
               </div>
             </div>
           `;
           const ed = el.querySelector('#dc-editor');
+          const wordsSpan = el.querySelector('#doc-words');
+          ed.oninput = () => {
+            const count = ed.innerText.trim() ? ed.innerText.trim().split(/\s+/).length : 0;
+            wordsSpan.innerText = `${count} words`;
+          };
           el.querySelector('#dc-exp').onclick = () => WebDesk.downloadFile('document.html', ed.innerHTML);
         },
 
@@ -1045,10 +1773,24 @@
                 td.className = 'border border-white/10 p-1 bg-slate-900/40';
                 const inp = document.createElement('input');
                 inp.className = 'w-full bg-transparent text-center border-none text-white focus:outline-none';
-                inp.value = cell;
-                inp.onchange = (e) => {
+                
+                // Formula evaluation display preview
+                if (String(cell).startsWith('=')) {
+                  try {
+                    inp.title = cell;
+                    inp.value = eval(cell.substring(1));
+                  } catch(e) {
+                    inp.value = cell;
+                  }
+                } else {
+                  inp.value = cell;
+                }
+
+                inp.onfocus = () => { inp.value = data[r][c]; };
+                inp.onblur = (e) => {
                   data[r][c] = e.target.value;
                   localStorage.setItem('wd_sheets_data', JSON.stringify(data));
+                  render();
                   WebDesk.syncAll();
                 };
                 td.appendChild(inp);
@@ -1154,7 +1896,7 @@
             <div class="flex flex-col h-full text-xs">
               <div class="h-10 bg-slate-950 border-b border-white/10 px-3 flex items-center justify-between">
                 <label class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-white font-semibold cursor-pointer active:scale-95 touch-manipulation">
-                  Upload File <input type="file" id="fm-up" class="hidden" />
+                  Upload File to Drive <input type="file" id="fm-up" class="hidden" />
                 </label>
                 <span class="text-slate-400" id="fm-count">${files.length} files</span>
               </div>
@@ -1186,6 +1928,23 @@
               localStorage.setItem('wd_files_meta', JSON.stringify(files));
               draw();
               WebDesk.notify('File Uploaded', file.name);
+
+              // Upload binary to Google Drive under Files folder
+              if (WebDesk.state.sysConfig.webhookUrl) {
+                const base64 = ev.target.result.split(',')[1];
+                fetch(WebDesk.state.sysConfig.webhookUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'upload_media',
+                    appFolder: 'General_Files',
+                    fileName: file.name,
+                    mimeType: file.type,
+                    base64Data: base64
+                  })
+                });
+              }
             };
             r.readAsDataURL(file);
           };
@@ -1259,13 +2018,17 @@
                   <input type="color" id="pt-col" value="#0ea5e9" class="w-7 h-7 rounded bg-transparent border-none cursor-pointer">
                   <input type="range" id="pt-sz" min="1" max="25" value="4" class="w-20 accent-brand-500">
                 </div>
-                <button id="pt-clr" class="px-3 py-1 bg-rose-500/20 text-rose-300 rounded font-bold active:scale-95 touch-manipulation">Clear</button>
+                <div class="flex items-center gap-1.5">
+                  <button id="pt-undo" class="px-2.5 py-1 bg-white/10 rounded font-bold hover:bg-white/20 active:scale-90">Undo</button>
+                  <button id="pt-clr" class="px-3 py-1 bg-rose-500/20 text-rose-300 rounded font-bold active:scale-95 touch-manipulation">Clear</button>
+                </div>
               </div>
               <canvas id="pt-cv" class="flex-1 bg-slate-900 touch-none w-full h-full"></canvas>
             </div>
           `;
           const cv = el.querySelector('#pt-cv');
           const ctx = cv.getContext('2d');
+          let history = [];
           
           setTimeout(() => {
             cv.width = cv.parentElement.clientWidth;
@@ -1280,11 +2043,17 @@
             return { x: clientX - r.left, y: clientY - r.top };
           };
 
-          const start = (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+          const start = (e) => {
+            history.push(ctx.getImageData(0, 0, cv.width, cv.height));
+            drawing = true;
+            ctx.beginPath();
+            const p = getPos(e);
+            ctx.moveTo(p.x, p.y);
+          };
           const stop = () => { drawing = false; };
           const draw = (e) => {
             if (!drawing) return;
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             const p = getPos(e);
             ctx.lineWidth = el.querySelector('#pt-sz').value;
             ctx.strokeStyle = el.querySelector('#pt-col').value;
@@ -1300,7 +2069,13 @@
           cv.addEventListener('touchmove', draw, { passive: false });
           cv.addEventListener('touchend', stop);
 
-          el.querySelector('#pt-clr').onclick = () => ctx.clearRect(0, 0, cv.width, cv.height);
+          el.querySelector('#pt-undo').onclick = () => {
+            if (history.length) ctx.putImageData(history.pop(), 0, 0);
+          };
+          el.querySelector('#pt-clr').onclick = () => {
+            history.push(ctx.getImageData(0, 0, cv.width, cv.height));
+            ctx.clearRect(0, 0, cv.width, cv.height);
+          };
         },
 
         calc(el) {
@@ -1318,9 +2093,9 @@
 
         news(el) {
           const feed = [
-            { title: 'WebDesk Ultra OS v5.0 Workstation Launched', time: '10m ago', cat: 'Tech' },
-            { title: 'Full Progressive Web Apps Running with Google Drive Pipelines', time: '1h ago', cat: 'Cloud' },
-            { title: 'Touch and Mouse Parity Verified Across All Screen Sizes', time: '2h ago', cat: 'Mobile' }
+            { title: 'WebDesk Ultra OS v5.0 Multi-Drive Architecture Live', time: '5m ago', cat: 'Cloud' },
+            { title: 'WebSurfer Pro Browser Integrated Inside Desktop Engine', time: '30m ago', cat: 'Internet' },
+            { title: 'Full iPadOS and Safari Touch Parity Finalized', time: '1h ago', cat: 'Mobile' }
           ];
           el.innerHTML = `
             <div class="flex flex-col h-full p-3 text-xs">
@@ -1388,11 +2163,12 @@
             if (e.key === 'Enter') {
               const cmd = inp.value.trim().toLowerCase();
               let res = '';
-              if (cmd === 'help') res = 'Commands: help, clear, date, apps, sync, lock, reboot';
+              if (cmd === 'help') res = 'Commands: help, clear, date, apps, sync, initcloud, lock, reboot';
               else if (cmd === 'clear') { out.innerHTML = ''; inp.value = ''; return; }
               else if (cmd === 'date') res = new Date().toString();
               else if (cmd === 'apps') res = WebDesk.state.apps.map(a => a.name).join(', ');
               else if (cmd === 'sync') { WebDesk.syncAll(); res = 'Synchronization triggered.'; }
+              else if (cmd === 'initcloud') { WebDesk.initMasterCloudWorkspace(true); res = 'Init dispatched.'; }
               else if (cmd === 'lock') { WebDesk.lockOS(); res = 'Locked.'; }
               else if (cmd === 'reboot') { location.reload(); }
               else res = `Command not recognized: ${cmd}`;
@@ -1583,7 +2359,7 @@
             if (!code) { alert('Please provide code.'); return; }
 
             const customApps = JSON.parse(localStorage.getItem('webdesk_custom_apps') || '[]');
-            const newApp = { id: `app_${Date.now()}`, name: title, icon, code };
+            const newApp = { id: `app_${Date.now()}`, name: title, icon, code, isCustom: true };
             customApps.push(newApp);
             localStorage.setItem('webdesk_custom_apps', JSON.stringify(customApps));
 
@@ -1598,19 +2374,23 @@
         settings(el) {
           el.innerHTML = `
             <div class="flex flex-col h-full p-4 overflow-y-auto space-y-4 text-xs">
-              <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10 space-y-2.5">
-                <div class="font-bold text-sm text-brand-500">Google Apps Script Webhook Sync</div>
+              <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10 space-y-3">
+                <div class="font-bold text-sm text-brand-500 flex justify-between items-center">
+                  <span>Google Apps Script & Drive Integration</span>
+                  <span class="text-[10px] text-slate-400 font-normal">Multi-Folder & Multi-Sheet Architecture</span>
+                </div>
                 <input id="st-url" type="url" placeholder="https://script.google.com/macros/s/.../exec" value="${WebDesk.state.sysConfig.webhookUrl}" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-[11px]">
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <button id="st-save-url" class="px-4 py-2.5 bg-brand-600 rounded-xl font-bold text-white active:scale-95 touch-manipulation">Save URL</button>
+                  <button onclick="WebDesk.initMasterCloudWorkspace(true)" class="px-4 py-2.5 bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-xl font-bold active:scale-95 touch-manipulation">Initialize Master Workspace</button>
                   <button onclick="WebDesk.syncAll()" class="px-4 py-2.5 bg-emerald-600/30 text-emerald-300 rounded-xl font-bold active:scale-95 touch-manipulation">Sync Now</button>
                 </div>
               </div>
 
               <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10 space-y-2.5">
-                <div class="font-bold text-sm text-purple-400">Master Password</div>
+                <div class="font-bold text-sm text-purple-400">Master Security Password</div>
                 <div class="grid grid-cols-2 gap-2">
-                  <input id="st-p-old" type="password" placeholder="Current" class="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white">
+                  <input id="st-p-old" type="password" placeholder="Current Password" class="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white">
                   <input id="st-p-new" type="password" placeholder="New Password" class="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white">
                 </div>
                 <button id="st-save-pwd" class="px-4 py-2.5 bg-purple-600 rounded-xl font-bold text-white active:scale-95 touch-manipulation">Change Key</button>
@@ -1632,7 +2412,7 @@
             const u = el.querySelector('#st-url').value.trim();
             localStorage.setItem('webdesk_sync_url', u);
             WebDesk.state.sysConfig.webhookUrl = u;
-            WebDesk.notify('Settings', 'Webhook URL updated.');
+            WebDesk.notify('Settings Saved', 'Webhook URL updated.');
           };
 
           el.querySelector('#st-save-pwd').onclick = async () => {
@@ -1655,20 +2435,16 @@
             <div class="flex flex-col h-full p-4 overflow-y-auto text-xs space-y-3 font-mono">
               <div class="font-bold text-sm text-brand-500">Requirements Traceability Matrix (RTM)</div>
               <div class="p-3 bg-slate-900 rounded-xl border border-white/10 space-y-1">
-                <div class="text-white font-bold">REQ-01: Single User Access</div>
-                <div class="text-slate-400">Verified via SHA-256 Web Cryptography API lock screen.</div>
+                <div class="text-white font-bold">REQ-01: Core App Hide, Delete & Restore</div>
+                <div class="text-slate-400">Full visibility toggling and uninstallation with 1-click restore in App Manager.</div>
               </div>
               <div class="p-3 bg-slate-900 rounded-xl border border-white/10 space-y-1">
-                <div class="text-white font-bold">REQ-02: Full Agnosticism</div>
-                <div class="text-slate-400">Touch, Pointer and Mouse parity with fluid window dragging & resizing.</div>
+                <div class="text-white font-bold">REQ-02: Multi-Folder Drive & Multi-Tab Sheet Setup</div>
+                <div class="text-slate-400">Auto-partitions Google Drive subfolders & Sheets tabs for each desktop application.</div>
               </div>
               <div class="p-3 bg-slate-900 rounded-xl border border-white/10 space-y-1">
-                <div class="text-white font-bold">REQ-03: Zero Click Deadlocks</div>
-                <div class="text-slate-400">Layer boundaries separated; pointer-events: auto on all interactive elements.</div>
-              </div>
-              <div class="p-3 bg-slate-900 rounded-xl border border-white/10 space-y-1">
-                <div class="text-white font-bold">REQ-04: 30+ Core Operational Apps</div>
-                <div class="text-slate-400">All 30 core applications fully implemented with state persistence.</div>
+                <div class="text-white font-bold">REQ-03: WebSurfer Pro Internet Browser</div>
+                <div class="text-slate-400">Integrated multi-tab omnibox browser with history, bookmarks, and search.</div>
               </div>
             </div>
           `;
@@ -1758,7 +2534,7 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            this.notify('Cloud Synchronized', 'Records synced with Google Sheets.');
+            this.notify('Cloud Synchronized', 'Records synced with Google Sheets & Drive.');
           } catch(e) {}
         }
 
